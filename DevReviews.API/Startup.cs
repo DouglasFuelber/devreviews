@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DevReviews.API.Profiles;
 using DevReviews.API.Repositories;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -28,6 +29,8 @@ namespace DevReviews.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<DevReviewsDbContext>();
+
+            services.AddAutoMapper(typeof(ProductProfile));
 
             services.AddControllers();
             services.AddSwaggerGen(c =>

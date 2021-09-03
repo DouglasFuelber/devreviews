@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using AutoMapper;
 using DevReviews.API.DTOs;
 using DevReviews.API.Entities;
 using DevReviews.API.Repositories;
+using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevReviews.API.Controllers
@@ -12,9 +14,11 @@ namespace DevReviews.API.Controllers
     public class ProductsController : ControllerBase
     {
         private readonly DevReviewsDbContext _dbContext;
+        private readonly IMapper _mapper;
 
-        public ProductsController(DevReviewsDbContext dbContext)
+        public ProductsController(DevReviewsDbContext dbContext, IMapper mapper)
         {
+            _mapper = mapper;
             _dbContext = dbContext;
         }
 
@@ -23,7 +27,9 @@ namespace DevReviews.API.Controllers
         {
             List<Product> products = _dbContext.Products.ToList();
 
-            return Ok(products);
+            List<ProductViewModel> productsViewModels = _mapper.Map<List<ProductViewModel>>(products);
+
+            return Ok(productsViewModels);
         }
 
         [HttpGet("{id}")]
@@ -34,7 +40,9 @@ namespace DevReviews.API.Controllers
             if (product == null)
                 return NotFound();
 
-            return Ok(product);
+            ProductDetailsViewModel productDetailsViewModel = _mapper.Map<ProductDetailsViewModel>(product);
+
+            return Ok(productDetailsViewModel);
         }
 
         [HttpPost]
