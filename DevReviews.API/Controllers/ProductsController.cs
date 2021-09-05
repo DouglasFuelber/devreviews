@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using AutoMapper;
 using DevReviews.API.DTOs;
 using DevReviews.API.Entities;
@@ -24,9 +24,9 @@ namespace DevReviews.API.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            List<Product> products = _dbContext.Products.ToList();
+            List<Product> products = await _dbContext.Products.ToListAsync();
 
             List<ProductViewModel> productsViewModels = _mapper.Map<List<ProductViewModel>>(products);
 
@@ -34,11 +34,11 @@ namespace DevReviews.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            Product product = _dbContext.Products
-                                                             .Include(p => p.Reviews)
-                                                             .SingleOrDefault(p => p.Id == id);
+            Product product = await _dbContext.Products
+                                                                       .Include(p => p.Reviews)
+                                                                       .SingleOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
                 return NotFound();
@@ -49,7 +49,7 @@ namespace DevReviews.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post(ProductPostDTO productDTO)
+        public async Task<IActionResult> Post(ProductPostDTO productDTO)
         {
             if (productDTO.Description.Length > 50)
                 return BadRequest();
@@ -57,18 +57,18 @@ namespace DevReviews.API.Controllers
             Product product = new Product(productDTO.Title, productDTO.Description, productDTO.Price);
 
             _dbContext.Products.Add(product);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Put(int id, ProductPutDTO productDTO)
+        public async Task<IActionResult> Put(int id, ProductPutDTO productDTO)
         {
             if (productDTO.Description.Length > 50)
                 return BadRequest();
 
-            Product product = _dbContext.Products.SingleOrDefault(p => p.Id == id);
+            Product product = await _dbContext.Products.SingleOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
                 return NotFound();
@@ -76,7 +76,7 @@ namespace DevReviews.API.Controllers
             product.Update(productDTO.Description, productDTO.Price);
 
             _dbContext.Products.Update(product);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
 
             return NoContent();
         }
