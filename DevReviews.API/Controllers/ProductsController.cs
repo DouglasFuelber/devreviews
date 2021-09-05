@@ -3,9 +3,10 @@ using System.Linq;
 using AutoMapper;
 using DevReviews.API.DTOs;
 using DevReviews.API.Entities;
-using DevReviews.API.Repositories;
+using DevReviews.API.Persistence;
 using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DevReviews.API.Controllers
 {
@@ -35,7 +36,9 @@ namespace DevReviews.API.Controllers
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
-            Product product = _dbContext.Products.SingleOrDefault(p => p.Id == id);
+            Product product = _dbContext.Products
+                                                             .Include(p => p.Reviews)
+                                                             .SingleOrDefault(p => p.Id == id);
 
             if (product == null)
                 return NotFound();
@@ -54,8 +57,9 @@ namespace DevReviews.API.Controllers
             Product product = new Product(productDTO.Title, productDTO.Description, productDTO.Price);
 
             _dbContext.Products.Add(product);
+            _dbContext.SaveChanges();
 
-            return CreatedAtAction(nameof(GetById), new { id = 0 }, product);
+            return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
         [HttpPut("{id}")]
@@ -70,6 +74,9 @@ namespace DevReviews.API.Controllers
                 return NotFound();
 
             product.Update(productDTO.Description, productDTO.Price);
+
+            _dbContext.Products.Update(product);
+            _dbContext.SaveChanges();
 
             return NoContent();
         }

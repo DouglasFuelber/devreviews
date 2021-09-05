@@ -1,4 +1,10 @@
+using System.Collections.Generic;
+using System.Linq;
+using AutoMapper;
 using DevReviews.API.DTOs;
+using DevReviews.API.Entities;
+using DevReviews.API.Persistence;
+using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DevReviews.API.Controllers
@@ -7,28 +13,47 @@ namespace DevReviews.API.Controllers
     [Route("api/product/{productId}/reviews")]
     public class ProductsReviewsController : ControllerBase
     {
+        private readonly DevReviewsDbContext _dbContext;
+        private readonly IMapper _mapper;
+
+        public ProductsReviewsController(DevReviewsDbContext dbContext, IMapper mapper)
+        {
+            _mapper = mapper;
+            _dbContext = dbContext;
+        }
+
         [HttpGet]
         public IActionResult GetAll(int productId)
         {
-            if (productId == 1)
-                return Ok();
+            List<ProductReview> productReviews = _dbContext.ProductReviews.Where(r => r.ProductId == productId).ToList();
 
-            return NotFound();
+            List<ProductReviewViewModel> productReviewsViewModels = _mapper.Map<List<ProductReviewViewModel>>(productReviews);
+
+            return Ok(productReviewsViewModels);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetById(int id, int productId)
         {
-            if (id == 5 && productId == 1)
-                return Ok();
+            ProductReview productReview = _dbContext.ProductReviews.SingleOrDefault(p => p.Id == id && p.ProductId == productId);
 
-            return NotFound();
+            if (productReview == null)
+                return NotFound();
+
+            ProductReviewDetailsViewModel productReviewDetailsViewModel = _mapper.Map<ProductReviewDetailsViewModel>(productReview);
+
+            return Ok(productReviewDetailsViewModel);
         }
 
         [HttpPost]
         public IActionResult Post(int productId, ProductReviewPostDTO review)
         {
-            return CreatedAtAction(nameof(GetById), new { id = 5, productId = 1 }, review);
+            ProductReview productReview = new ProductReview(review.Author, review.Rating, review.Comment, productId);
+
+            _dbContext.ProductReviews.Add(productReview);
+            _dbContext.SaveChanges();
+
+            return CreatedAtAction(nameof(GetById), new { id = productReview.Id, productId }, review);
         }
     }
 }
