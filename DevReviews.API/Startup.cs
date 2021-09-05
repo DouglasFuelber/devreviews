@@ -7,6 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
+using DevReviews.API.Persistence.Repositories.Interfaces;
+using DevReviews.API.Persistence.Repositories;
 
 namespace DevReviews.API
 {
@@ -24,6 +26,8 @@ namespace DevReviews.API
         {
             string connectionString = Configuration.GetValue<string>("DevReviewsConnectionString");
             services.AddDbContext<DevReviewsDbContext>(options => options.UseSqlServer(connectionString));
+
+            services.AddScoped<IProductRepository, ProductRepository>();
 
             services.AddAutoMapper(typeof(ProductProfile));
 

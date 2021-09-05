@@ -1,13 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using DevReviews.API.DTOs;
 using DevReviews.API.Entities;
-using DevReviews.API.Persistence;
+using DevReviews.API.Persistence.Repositories.Interfaces;
 using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DevReviews.API.Controllers
 {
@@ -15,29 +12,19 @@ namespace DevReviews.API.Controllers
     [Route("api/product/{productId}/reviews")]
     public class ProductsReviewsController : ControllerBase
     {
-        private readonly DevReviewsDbContext _dbContext;
+        private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
 
-        public ProductsReviewsController(DevReviewsDbContext dbContext, IMapper mapper)
+        public ProductsReviewsController(IProductRepository productRepository, IMapper mapper)
         {
             _mapper = mapper;
-            _dbContext = dbContext;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll(int productId)
-        {
-            List<ProductReview> productReviews = await _dbContext.ProductReviews.Where(r => r.ProductId == productId).ToListAsync();
-
-            List<ProductReviewViewModel> productReviewsViewModels = _mapper.Map<List<ProductReviewViewModel>>(productReviews);
-
-            return Ok(productReviewsViewModels);
+            _productRepository = productRepository;
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id, int productId)
         {
-            ProductReview productReview = await _dbContext.ProductReviews.SingleOrDefaultAsync(p => p.Id == id && p.ProductId == productId);
+            ProductReview productReview = await _productRepository.GetReviewByIdAsync(id);
 
             if (productReview == null)
                 return NotFound();
@@ -52,8 +39,7 @@ namespace DevReviews.API.Controllers
         {
             ProductReview productReview = new ProductReview(review.Author, review.Rating, review.Comment, productId);
 
-            _dbContext.ProductReviews.Add(productReview);
-            await _dbContext.SaveChangesAsync();
+            await _productRepository.AddReviewAsync(productReview);
 
             return CreatedAtAction(nameof(GetById), new { id = productReview.Id, productId }, review);
         }

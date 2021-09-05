@@ -3,10 +3,9 @@ using System.Threading.Tasks;
 using AutoMapper;
 using DevReviews.API.DTOs;
 using DevReviews.API.Entities;
-using DevReviews.API.Persistence;
+using DevReviews.API.Persistence.Repositories.Interfaces;
 using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DevReviews.API.Controllers
 {
@@ -14,19 +13,19 @@ namespace DevReviews.API.Controllers
     [Route("api/[controller]")]
     public class ProductsController : ControllerBase
     {
-        private readonly DevReviewsDbContext _dbContext;
+        private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
 
-        public ProductsController(DevReviewsDbContext dbContext, IMapper mapper)
+        public ProductsController(IProductRepository productRepository, IMapper mapper)
         {
             _mapper = mapper;
-            _dbContext = dbContext;
+            _productRepository = productRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            List<Product> products = await _dbContext.Products.ToListAsync();
+            List<Product> products = await _productRepository.GetAllAsync();
 
             List<ProductViewModel> productsViewModels = _mapper.Map<List<ProductViewModel>>(products);
 
@@ -36,9 +35,7 @@ namespace DevReviews.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            Product product = await _dbContext.Products
-                                                                       .Include(p => p.Reviews)
-                                                                       .SingleOrDefaultAsync(p => p.Id == id);
+            Product product = await _productRepository.GetDetailsByIdAsync(id);
 
             if (product == null)
                 return NotFound();
@@ -56,8 +53,7 @@ namespace DevReviews.API.Controllers
 
             Product product = new Product(productDTO.Title, productDTO.Description, productDTO.Price);
 
-            _dbContext.Products.Add(product);
-            await _dbContext.SaveChangesAsync();
+            await _productRepository.AddAsync(product);
 
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
@@ -68,15 +64,14 @@ namespace DevReviews.API.Controllers
             if (productDTO.Description.Length > 50)
                 return BadRequest();
 
-            Product product = await _dbContext.Products.SingleOrDefaultAsync(p => p.Id == id);
+            Product product = await _productRepository.GetByIdAsync(id);
 
             if (product == null)
                 return NotFound();
 
             product.Update(productDTO.Description, productDTO.Price);
 
-            _dbContext.Products.Update(product);
-            await _dbContext.SaveChangesAsync();
+            await _productRepository.UpdateAsync(product);
 
             return NoContent();
         }
