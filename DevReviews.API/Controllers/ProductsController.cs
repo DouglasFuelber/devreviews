@@ -7,6 +7,7 @@ using DevReviews.API.Persistence.Repositories.Interfaces;
 using DevReviews.API.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 
 namespace DevReviews.API.Controllers
 {
@@ -34,6 +35,8 @@ namespace DevReviews.API.Controllers
 
             List<ProductViewModel> productsViewModels = _mapper.Map<List<ProductViewModel>>(products);
 
+            Log.Information("Get all products");
+
             return Ok(productsViewModels);
         }
 
@@ -49,10 +52,14 @@ namespace DevReviews.API.Controllers
         {
             Product product = await _productRepository.GetDetailsByIdAsync(id);
 
-            if (product == null)
+            if (product == null) {
+                Log.Information(string.Format("Product [{0}] not found", id));
                 return NotFound();
+            }
 
             ProductDetailsViewModel productDetailsViewModel = _mapper.Map<ProductDetailsViewModel>(product);
+
+            Log.Information(string.Format("Get product [{0}] {1}", product.Id, product.Title));
 
             return Ok(productDetailsViewModel);
         }
